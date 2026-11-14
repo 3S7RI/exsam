@@ -1,43 +1,81 @@
-<!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>الامتحانات</title><link rel=stylesheet href=style.css></head>
-<body><script>
-window.__err=function(m){var d=document.createElement('pre');d.style.cssText='background:#fee;color:#900;padding:10px;direction:ltr;white-space:pre-wrap;margin:10px;font:13px monospace';d.textContent='ERROR: '+m;(document.body||document.documentElement).appendChild(d)};
-addEventListener('error',function(e){__err((e.message||'script load failed')+' '+(e.filename||''))},true);
-addEventListener('unhandledrejection',function(e){__err((e.reason&&(e.reason.code+' | '+e.reason.message))||e.reason)});
-</script>
+<!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>رحلة دراسية | الامتحانات</title><link rel=icon href=logo.jpg>
+<style>
+:root{--bg:#f4f1ea;--c:#fff;--t:#1d2b44;--n:#24497a;--o:#e8793a;--b:#e6e1d6;--ok:#15803d;--no:#dc2626;--sh:0 8px 28px #24497a1f;font-size:calc(16px*var(--fs,1))}
+[data-theme=dark]{--bg:#0e1524;--c:#18233a;--t:#e9eefb;--n:#7fb0f0;--b:#2b3a58;--sh:0 8px 28px #0007}
+*{box-sizing:border-box}body{margin:0;color:var(--t);background:var(--bg) radial-gradient(circle at 10% 5%,#e8793a24,transparent 35%),radial-gradient(circle at 92% 18%,#24497a24,transparent 40%) fixed;font:1rem/1.9 "Segoe UI",Tahoma,Arial,sans-serif;direction:rtl}
+main{max-width:860px;margin:auto;padding:14px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;max-width:860px;margin:auto}
+.logo{background:#fff;border-radius:16px;padding:4px 10px;box-shadow:var(--sh)}.logo img{height:54px;display:block}
+.tools button{background:var(--c);color:var(--t);border:1px solid var(--b);border-radius:12px;padding:6px 12px;margin-inline-start:6px;cursor:pointer;font:inherit}
+.hero{text-align:center;padding:18px 0 4px}.hero h1{margin:0;font-size:1.7rem;color:var(--n)}.hero p{margin:4px 0;opacity:.75}
+.card,.pass{background:var(--c);border:1px solid var(--b);border-radius:20px;padding:16px;margin:14px 0;box-shadow:var(--sh)}
+.pass{border-right:6px solid var(--o);white-space:pre-wrap}
+.ex{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.ex b{font-size:1.1rem}
+.tag{background:#e8793a22;color:var(--o);border-radius:99px;padding:2px 12px;font-size:.85rem;margin-inline-start:6px}
+.btn{background:linear-gradient(135deg,var(--o),#f2994a);color:#fff;border:0;border-radius:14px;padding:10px 22px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 6px 16px #e8793a55;transition:.2s}.btn:hover{transform:translateY(-2px)}
+.btn.big{width:100%;padding:14px;font-size:1.1rem;margin:10px 0 40px}
+input,textarea{width:100%;padding:11px 14px;border:2px solid var(--b);border-radius:14px;background:var(--bg);color:var(--t);font:inherit;margin:5px 0;outline:0}
+input:focus,textarea:focus{border-color:var(--o)}input[type=radio]{width:auto;accent-color:var(--o)}textarea{min-height:120px}
+.bar{position:sticky;top:0;z-index:9;background:var(--c);border-bottom:1px solid var(--b);box-shadow:var(--sh)}
+.bar>div{max-width:860px;margin:auto;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pbar{height:6px;background:var(--b)}#pb{height:100%;width:0;background:linear-gradient(90deg,var(--n),var(--o));transition:.4s}
+#t{background:var(--n);color:#fff;border-radius:99px;padding:3px 16px;font-weight:700;font-variant-numeric:tabular-nums}#t.low{background:var(--no);animation:p 1s infinite}
+@keyframes p{50%{opacity:.55}}
+.nav{display:flex;flex-wrap:wrap;gap:6px}.chip{width:36px;height:36px;border-radius:12px;border:2px solid var(--b);background:var(--bg);color:var(--t);cursor:pointer;font:inherit}
+.chip.done{background:var(--n);color:#fff;border-color:var(--n)}.chip.flag{border-color:var(--o);box-shadow:0 0 0 2px var(--o)}
+.q{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}.q b.n{background:var(--n);color:#fff;border-radius:10px;padding:0 10px;margin-inline-end:6px}
+.fl{background:none;border:0;font-size:1.3rem;cursor:pointer;opacity:.4}.fl.on{opacity:1}
+.opt{display:block;padding:9px 14px;border:2px solid var(--b);border-radius:14px;margin:8px 0;cursor:pointer;transition:.15s}.opt:hover{border-color:var(--o)}.opt:has(input:checked){border-color:var(--n);background:#24497a14}
+.ok{color:var(--ok)}.no{color:var(--no)}small{opacity:.7}.saved{font-size:.8rem;opacity:.6}
+.cf{position:fixed;top:-20px;width:10px;height:14px;animation:f 3s linear forwards;z-index:99}@keyframes f{to{transform:translateY(105vh) rotate(720deg)}}
+</style></head><body>
+<script>window.__err=function(m){var d=document.createElement('pre');d.style.cssText='background:#fee;color:#900;padding:10px;direction:ltr;white-space:pre-wrap;margin:10px';d.textContent='ERROR: '+m;document.body.appendChild(d)};addEventListener('error',e=>__err((e.message||'load failed')+' '+(e.filename||'')),true);addEventListener('unhandledrejection',e=>__err(e.reason&&(e.reason.code+' | '+e.reason.message)||e.reason));</script>
+<div class=top><div class=logo><img src=logo.jpg alt="رحلة دراسية"></div><div class=tools><button id=fa>A+</button><button id=fb>A-</button><button id=th>🌓</button></div></div>
 <main id=app>جارٍ التحميل…</main>
 <script type=module>
 import {db,fs,$,esc,fmt,grade,review,shuffle} from "./common.js";
-const app=$("#app"),P=new URLSearchParams(location.search),LS="exam_state";
+const app=$("#app"),P=new URLSearchParams(location.search),LS="exam_state",R=document.documentElement;
+R.dataset.theme=localStorage.th||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");let fs_=+localStorage.fs||1;R.style.setProperty("--fs",fs_);
+$("#th").onclick=()=>localStorage.th=R.dataset.theme=R.dataset.theme==="dark"?"light":"dark";
+$("#fa").onclick=()=>R.style.setProperty("--fs",localStorage.fs=Math.min(fs_+=.1,1.5));$("#fb").onclick=()=>R.style.setProperty("--fs",localStorage.fs=Math.max(fs_-=.1,.85));
 let ex,st,tm;const rid=()=>Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6);
-const save=()=>localStorage.setItem(LS,JSON.stringify(st));
+const save=()=>{localStorage.setItem(LS,JSON.stringify(st));const s=$("#sv");if(s)s.textContent="✓ تم الحفظ"};
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&st&&ex&&tm){st.sw=(st.sw||0)+1;save()}});
 async function home(){
  if(P.get("code"))return result(P.get("code"));
  const old=JSON.parse(localStorage.getItem(LS)||"null");
  if(old){const s=await fs.getDoc(fs.doc(db,"exams",old.id));if(s.exists()){ex=s.data();st=old;return run()}}
  const q=await fs.getDocs(fs.query(fs.collection(db,"exams"),fs.where("active","==",true)));
- app.innerHTML="<h2>الامتحانات المتاحة</h2>"+(q.empty?"<p>لا توجد امتحانات الآن.</p>":"")+q.docs.map(d=>`<div class=card><b>${esc(d.data().title)}</b> <small>${d.data().durationMin} دقيقة</small><br><button data-id="${d.id}">ابدأ</button></div>`).join("")+
- `<div class=card>شوف نتيجتك: <input id=cd placeholder="كود النتيجة"><button id=go>عرض</button></div>`;
+ app.innerHTML=`<div class=hero><h1>بوابة الامتحانات</h1><p>اختر امتحانك وابدأ رحلتك 🚀</p></div>`+(q.empty?"<div class=card>لا توجد امتحانات متاحة الآن.</div>":"")+
+ q.docs.map(d=>{const x=d.data();return `<div class="card ex"><div><b>${esc(x.title)}</b><br><span class=tag>${esc(x.subject||"")}</span><span class=tag>${x.durationMin} دقيقة</span><span class=tag>${x.questions.length} سؤال</span></div><button class=btn data-id="${d.id}">ابدأ</button></div>`}).join("")+
+ `<div class=card><b>🔎 شوف نتيجتك</b><input id=cd placeholder="اكتب كود النتيجة"><button class=btn id=go>عرض</button></div>`;
  app.onclick=e=>{if(e.target.dataset.id)form(e.target.dataset.id);if(e.target.id==="go")result($("#cd").value.trim())}}
 async function form(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();
- app.innerHTML=`<h2>${esc(ex.title)}</h2><div class=card>المدة: ${ex.durationMin} دقيقة — الدرجة: ${ex.questions.reduce((a,q)=>a+q.marks,0)}<br>الوقت يبدأ لما تضغط «ابدأ الامتحان».
- <input id=n placeholder="الاسم"><input id=c placeholder="الفصل"><input id=m type=email placeholder="الإيميل (لاستلام النتيجة)"><button id=s>ابدأ الامتحان</button></div>`;
+ app.innerHTML=`<div class=hero><h1>${esc(ex.title)}</h1><p>${ex.durationMin} دقيقة — الدرجة ${ex.questions.reduce((a,q)=>a+q.marks,0)}<br>الوقت يبدأ لما تضغط «ابدأ الامتحان»</p></div><div class=card><input id=n placeholder="الاسم بالكامل"><input id=c placeholder="الفصل"><input id=m type=email placeholder="الإيميل (لاستلام النتيجة)"><button class="btn big" id=s>ابدأ الامتحان ✨</button></div>`;
  $("#s").onclick=()=>{const n=$("#n").value.trim(),m=$("#m").value.trim();if(!n||!m)return alert("اكتب الاسم والإيميل");
-  st={id,n,c:$("#c").value,m,t0:Date.now(),a:{},o:{}};ex.questions.forEach(q=>{if(q.type!=="essay")st.o[q.id]=shuffle(q.options.map((_,i)=>i))});save();run()}}
-function run(){let last=null;
- app.innerHTML=`<div class=bar><b>${esc(ex.title)}</b><b id=t></b></div>`+ex.questions.map((q,i)=>{let h=q.passage&&q.passage!==last?`<div class=pass>${esc(q.passage)}</div>`:"";last=q.passage||null;
- return h+`<div class=card><b>${i+1}.</b> ${esc(q.text)} <small>(${q.marks})</small>`+(q.type==="essay"?`<textarea data-q="${q.id}">${esc(st.a[q.id]||"")}</textarea>`:st.o[q.id].map(k=>`<label class=opt><input type=radio name="${q.id}" value="${k}" ${st.a[q.id]===k?"checked":""}> ${esc(q.options[k])}</label>`).join(""))+"</div>"}).join("")+`<button id=sub>تسليم الامتحان</button>`;
- app.oninput=e=>{const q=e.target.name||e.target.dataset.q;if(!q)return;st.a[q]=e.target.type==="radio"?+e.target.value:e.target.value;save()};
- $("#sub").onclick=()=>confirm("متأكد من التسليم؟")&&submit();
- tm=setInterval(()=>{const left=ex.durationMin*60-Math.floor((Date.now()-st.t0)/1000);$("#t").textContent="⏱ "+fmt(Math.max(left,0));if(left<=0)submit()},1000)}
-async function submit(){clearInterval(tm);const code=rid(),dur=Math.min(Math.floor((Date.now()-st.t0)/1000),ex.durationMin*60);
- app.innerHTML="جارٍ الإرسال…";
- try{await fs.addDoc(fs.collection(db,"submissions"),{examId:st.id,examTitle:ex.title,name:st.n,cls:st.c,email:st.m,answers:st.a,startedAt:st.t0,durationSec:dur,code,released:false,submittedAt:fs.serverTimestamp()})}
- catch(e){app.innerHTML="تعذر الإرسال، تأكد من الإنترنت وحاول مرة تانية.";return run()}
- localStorage.removeItem(LS);
- let h=`<h2>تم التسليم ✅</h2><div class=card>كود نتيجتك: <b>${code}</b><br>احتفظ به. هتشوف نتيجتك بيه من الصفحة الرئيسية بعد ما المعلم ينشرها.</div>`;
+  st={id,n,c:$("#c").value,m,t0:Date.now(),a:{},o:{},f:{},sw:0};ex.questions.forEach(q=>{if(q.type!=="essay")st.o[q.id]=shuffle(q.options.map((_,i)=>i))});save();run()}}
+function upd(){const n=ex.questions.length;let a=0;ex.questions.forEach((q,i)=>{const ok=st.a[q.id]!=null&&st.a[q.id]!=="";a+=ok;$("#c"+i).className="chip"+(ok?" done":"")+(st.f[q.id]?" flag":"")});$("#pb").style.width=a/n*100+"%";$("#pc").textContent=a+" / "+n;return n-a}
+function run(){let last=null;st.f=st.f||{};
+ app.innerHTML=`<div class=bar style="margin:0 -14px"><div><b>${esc(ex.title)}</b><span class=saved id=sv></span><span id=pc></span><span id=t></span></div><div class=pbar><div id=pb></div></div></div>
+ <div class=card><div class=nav>${ex.questions.map((q,i)=>`<button class=chip id=c${i} data-j=${i}>${i+1}</button>`).join("")}</div><small>🟧 إطار برتقالي = علّمت السؤال للمراجعة</small></div>`+
+ ex.questions.map((q,i)=>{let h=q.passage&&q.passage!==last?`<div class=pass>${esc(q.passage)}</div>`:"";last=q.passage||null;
+ return h+`<div class=card id=q${i}><div class=q><div><b class=n>${i+1}</b>${esc(q.text)} <small>(${q.marks})</small></div><button class="fl ${st.f[q.id]?"on":""}" data-f=${q.id} title="علّم للمراجعة">🚩</button></div>`+(q.type==="essay"?`<textarea data-q="${q.id}" placeholder="اكتب إجابتك هنا…">${esc(st.a[q.id]||"")}</textarea>`:st.o[q.id].map(k=>`<label class=opt><input type=radio name="${q.id}" value="${k}" ${st.a[q.id]===k?"checked":""}> ${esc(q.options[k])}</label>`).join(""))+"</div>"}).join("")+`<button class="btn big" id=sub>تسليم الامتحان ✅</button>`;
+ app.oninput=e=>{const q=e.target.name||e.target.dataset.q;if(!q)return;st.a[q]=e.target.type==="radio"?+e.target.value:e.target.value;save();upd()};
+ app.onclick=e=>{const t=e.target;if(t.dataset.j!==undefined)$("#q"+t.dataset.j).scrollIntoView({behavior:"smooth",block:"center"});
+  if(t.dataset.f){st.f[t.dataset.f]=!st.f[t.dataset.f];t.classList.toggle("on");save();upd()}
+  if(t.id==="sub"){const u=upd();if(confirm(u?`فاضل ${u} سؤال من غير إجابة. تسلّم برضه؟`:"متأكد من التسليم؟"))submit()}};
+ upd();tm=setInterval(()=>{const left=ex.durationMin*60-Math.floor((Date.now()-st.t0)/1000);$("#t").textContent="⏱ "+fmt(Math.max(left,0));$("#t").className=left<300?"low":"";if(left<=0)submit()},1000)}
+function confetti(){for(let i=0;i<50;i++){const s=document.createElement("i");s.className="cf";s.style.cssText=`left:${Math.random()*100}vw;background:${["#e8793a","#24497a","#f2c14e","#4caf7d"][i%4]};animation-delay:${Math.random()}s`;document.body.appendChild(s);setTimeout(()=>s.remove(),4500)}}
+async function submit(){clearInterval(tm);tm=0;const code=rid(),dur=Math.min(Math.floor((Date.now()-st.t0)/1000),ex.durationMin*60);
+ app.innerHTML="<div class=card>جارٍ الإرسال…</div>";
+ try{await fs.addDoc(fs.collection(db,"submissions"),{examId:st.id,examTitle:ex.title,name:st.n,cls:st.c,email:st.m,answers:st.a,startedAt:st.t0,durationSec:dur,switches:st.sw||0,code,released:false,submittedAt:fs.serverTimestamp()})}
+ catch(e){alert("تعذر الإرسال، تأكد من الإنترنت.");return run()}
+ localStorage.removeItem(LS);confetti();
+ let h=`<div class=hero><h1>تم التسليم 🎉</h1></div><div class=card style="text-align:center">كود نتيجتك<br><b style="font-size:2rem;color:var(--o);letter-spacing:3px">${code}</b><br><small>صوّر الكود أو احتفظ به. هتشوف نتيجتك بيه من الصفحة الرئيسية بعد ما المعلم ينشرها.</small></div>`;
  if(ex.answers){const r=grade(ex,ex,st.a);h+=`<div class=card>الدرجة الموضوعية: <b>${r.obj}</b> (المقالي يصححه المعلم)</div>`+review(r.d.filter(x=>x.type!=="essay"))}
  app.innerHTML=h}
 async function result(code){const s=await fs.getDoc(fs.doc(db,"results",code));
- app.innerHTML=s.exists()?(r=>`<h2>${esc(r.name)}</h2><div class=card>${esc(r.examTitle)}<br>الدرجة: <b>${r.score} / ${r.tot}</b> (${r.pct}%) — التقدير: <b>${r.g}</b><br>زمن الحل: ${fmt(r.durationSec)}</div>${review(r.d)}`)(s.data()):`<div class=card>لسه النتيجة مش منشورة أو الكود غلط.</div><a href="./">رجوع</a>`}
+ app.innerHTML=s.exists()?(r=>`<div class=hero><h1>${esc(r.name)}</h1><p>${esc(r.examTitle)}</p></div><div class=card style="text-align:center;font-size:1.2rem">الدرجة<br><b style="font-size:2.4rem;color:var(--o)">${r.score} / ${r.tot}</b><br>${r.pct}% — التقدير: <b>${r.g}</b><br><small>زمن الحل: ${fmt(r.durationSec)}</small></div>${review(r.d)}`)(s.data()):`<div class=card>النتيجة لسه مش منشورة أو الكود غلط.</div><a href="./">رجوع</a>`;
+ if(s.exists()&&s.data().pct>=80)confetti()}
 home();
 </script></body></html>
