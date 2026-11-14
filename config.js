@@ -1,5 +1,9 @@
-// انسخ إعدادات Firebase من: Project settings > Your apps > Web app
 export const firebaseConfig = {
-  apiKey: "PASTE_HERE", authDomain: "PASTE_HERE", projectId: "PASTE_HERE",
-  storageBucket: "PASTE_HERE", messagingSenderId: "PASTE_HERE", appId: "PASTE_HERE"
+  apiKey: "AIzaSyD--Tml01t-pIEvKYZ0NBKIu28bFrbh2_g",
+  authDomain: "exsam-b1431.firebaseapp.com",
+  projectId: "exsam-b1431",
+  storageBucket: "exsam-b1431.firebasestorage.app",
+  messagingSenderId: "834092996816",
+  appId: "1:834092996816:web:dadfe00d93c01c6020a6d5",
+  measurementId: "G-CNLPEDM6XW"
 };
