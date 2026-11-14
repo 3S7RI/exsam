@@ -1,0 +1,36 @@
+<!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>لوحة المعلم</title><link rel=stylesheet href=css/style.css></head>
+<body><main id=app></main>
+<script type=module>
+import {db,auth,fs,au,$,esc,fmt,grade} from "./js/common.js";
+const app=$("#app");let ex,keys,subs=[];
+au.onAuthStateChanged(auth,u=>u?home():login());
+function login(){app.innerHTML=`<h2>دخول المعلم</h2><div class=card><input id=e type=email placeholder="الإيميل"><input id=p type=password placeholder="كلمة السر"><button id=b>دخول</button></div>`;
+ $("#b").onclick=()=>au.signInWithEmailAndPassword(auth,$("#e").value,$("#p").value).catch(()=>alert("بيانات غلط"))}
+async function home(){const q=await fs.getDocs(fs.collection(db,"exams"));
+ app.innerHTML=`<h2>الامتحانات</h2><div class=card>رفع امتحان (ملف JSON): <input type=file id=f accept=.json><button class=g id=out>خروج</button></div>`+
+ q.docs.map(d=>{const x=d.data();return `<div class=card><b>${esc(x.title)}</b> <small>${x.questions.length} سؤال — ${x.active?"مفتوح":"مغلق"}</small><br>
+ <button data-a=tg data-id="${d.id}">${x.active?"إغلاق":"فتح"}</button> <button data-a=sub data-id="${d.id}">النتائج والتصحيح</button> <button class=r data-a=del data-id="${d.id}">حذف</button></div>`}).join("");
+ $("#out").onclick=()=>au.signOut(auth);$("#f").onchange=upload;
+ app.onclick=async e=>{const{a,id}=e.target.dataset;if(!a)return;
+  if(a==="tg"){const s=await fs.getDoc(fs.doc(db,"exams",id));await fs.updateDoc(fs.doc(db,"exams",id),{active:!s.data().active});home()}
+  if(a==="del"&&confirm("حذف الامتحان؟")){await fs.deleteDoc(fs.doc(db,"exams",id));await fs.deleteDoc(fs.doc(db,"examKeys",id));home()}
+  if(a==="sub")subsView(id)}}
+async function upload(e){try{const j=JSON.parse(await e.target.files[0].text()),id=j.id||"exam-"+Date.now(),A={},M={};
+ const qs=j.questions.map((q,i)=>{const o={id:"q"+(i+1),type:q.type==="essay"?"essay":"mcq",text:q.text,marks:+q.marks||1};if(q.passage)o.passage=q.passage;
+  if(q.type==="tf"){o.options=["صح","خطأ"];A[o.id]=q.answer?0:1}else if(o.type==="mcq"){o.options=q.options;A[o.id]=q.answer}else M[o.id]=q.modelAnswer||"";return o});
+ const pub={title:j.title,subject:j.subject||"",durationMin:+j.durationMin||60,active:false,questions:qs,createdAt:Date.now()};
+ if(j.instantResult){if(!confirm("النتيجة الفورية بتحط الإجابات الصح جوه الصفحة العامة. متأكد؟"))return;pub.answers=A;pub.model=M}
+ await fs.setDoc(fs.doc(db,"exams",id),pub);await fs.setDoc(fs.doc(db,"examKeys",id),{answers:A,model:M});alert("تم الرفع (الامتحان مغلق، افتحه لما تجهز)");home()}catch(err){alert("الملف غير صالح: "+err.message)}}
+async function subsView(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();ex.id=id;keys=(await fs.getDoc(fs.doc(db,"examKeys",id))).data();
+ subs=(await fs.getDocs(fs.query(fs.collection(db,"submissions"),fs.where("examId","==",id)))).docs.map(d=>({id:d.id,...d.data()}));
+ const ess=ex.questions.filter(q=>q.type==="essay");
+ app.innerHTML=`<h2>${esc(ex.title)} — ${subs.length} طالب</h2><button class=g id=bk>رجوع</button> <button id=all>نشر النتائج للكل</button><div style="overflow:auto"><table><tr><th>الطالب</th><th>موضوعي</th><th>الزمن</th>${ess.map((q,i)=>`<th>مقالي ${i+1} (${q.marks})</th>`).join("")}<th>المجموع</th><th>إرسال</th></tr>`+
+ subs.map((s,i)=>{const r=grade(ex,keys,s.answers,s.essayMarks||{});return `<tr><td>${esc(s.name)}<br><small>${esc(s.cls)}</small></td><td>${r.obj}</td><td>${fmt(s.durationSec)}</td>${ess.map(q=>`<td><details><summary>إجابته</summary>${esc(s.answers[q.id]||"—")}<hr><small>${esc(keys.model[q.id])}</small></details><input type=number step=.5 max=${q.marks} value="${s.essayMarks?.[q.id]??""}" data-i=${i} data-q=${q.id}></td>`).join("")}<td>${r.score}/${r.tot} (${r.g})</td><td>${s.released?"✅ ":""}<button data-r=${i}>نشر</button> <a class=btn href="${mail(s,r)}">إيميل</a></td></tr>`}).join("")+"</table></div>";
+ $("#bk").onclick=home;
+ app.onchange=async e=>{const t=e.target;if(t.dataset.q){const s=subs[t.dataset.i];s.essayMarks={...(s.essayMarks||{}),[t.dataset.q]:+t.value};await fs.updateDoc(fs.doc(db,"submissions",s.id),{essayMarks:s.essayMarks});subsView(id)}};
+ app.onclick=async e=>{if(e.target.dataset.r!==undefined){await release(subs[e.target.dataset.r]);subsView(id)}
+  if(e.target.id==="all"&&confirm("نشر نتايج الكل؟")){for(const s of subs)await release(s);subsView(id)}}}
+async function release(s){const r=grade(ex,keys,s.answers,s.essayMarks||{});
+ await fs.setDoc(fs.doc(db,"results",s.code),{name:s.name,examTitle:ex.title,score:r.score,tot:r.tot,pct:r.pct,g:r.g,durationSec:s.durationSec,d:r.d});await fs.updateDoc(fs.doc(db,"submissions",s.id),{released:true})}
+const mail=(s,r)=>{const u=location.origin+location.pathname.replace("admin.html","")+"?code="+s.code;return `mailto:${s.email}?subject=${encodeURIComponent("نتيجة "+ex.title)}&body=${encodeURIComponent(`${s.name}\nالدرجة: ${r.score}/${r.tot} (${r.g})\nزمن الحل: ${fmt(s.durationSec)}\nالأخطاء والإجابات الصحيحة: ${u}`)}`};
+</script></body></html>

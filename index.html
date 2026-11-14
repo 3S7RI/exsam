@@ -1,0 +1,38 @@
+<!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>الامتحانات</title><link rel=stylesheet href=css/style.css></head>
+<body><main id=app>جارٍ التحميل…</main>
+<script type=module>
+import {db,fs,$,esc,fmt,grade,review,shuffle} from "./js/common.js";
+const app=$("#app"),P=new URLSearchParams(location.search),LS="exam_state";
+let ex,st,tm;const rid=()=>Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6);
+const save=()=>localStorage.setItem(LS,JSON.stringify(st));
+async function home(){
+ if(P.get("code"))return result(P.get("code"));
+ const old=JSON.parse(localStorage.getItem(LS)||"null");
+ if(old){const s=await fs.getDoc(fs.doc(db,"exams",old.id));if(s.exists()){ex=s.data();st=old;return run()}}
+ const q=await fs.getDocs(fs.query(fs.collection(db,"exams"),fs.where("active","==",true)));
+ app.innerHTML="<h2>الامتحانات المتاحة</h2>"+(q.empty?"<p>لا توجد امتحانات الآن.</p>":"")+q.docs.map(d=>`<div class=card><b>${esc(d.data().title)}</b> <small>${d.data().durationMin} دقيقة</small><br><button data-id="${d.id}">ابدأ</button></div>`).join("")+
+ `<div class=card>شوف نتيجتك: <input id=cd placeholder="كود النتيجة"><button id=go>عرض</button></div>`;
+ app.onclick=e=>{if(e.target.dataset.id)form(e.target.dataset.id);if(e.target.id==="go")result($("#cd").value.trim())}}
+async function form(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();
+ app.innerHTML=`<h2>${esc(ex.title)}</h2><div class=card>المدة: ${ex.durationMin} دقيقة — الدرجة: ${ex.questions.reduce((a,q)=>a+q.marks,0)}<br>الوقت يبدأ لما تضغط «ابدأ الامتحان».
+ <input id=n placeholder="الاسم"><input id=c placeholder="الفصل"><input id=m type=email placeholder="الإيميل (لاستلام النتيجة)"><button id=s>ابدأ الامتحان</button></div>`;
+ $("#s").onclick=()=>{const n=$("#n").value.trim(),m=$("#m").value.trim();if(!n||!m)return alert("اكتب الاسم والإيميل");
+  st={id,n,c:$("#c").value,m,t0:Date.now(),a:{},o:{}};ex.questions.forEach(q=>{if(q.type!=="essay")st.o[q.id]=shuffle(q.options.map((_,i)=>i))});save();run()}}
+function run(){let last=null;
+ app.innerHTML=`<div class=bar><b>${esc(ex.title)}</b><b id=t></b></div>`+ex.questions.map((q,i)=>{let h=q.passage&&q.passage!==last?`<div class=pass>${esc(q.passage)}</div>`:"";last=q.passage||null;
+ return h+`<div class=card><b>${i+1}.</b> ${esc(q.text)} <small>(${q.marks})</small>`+(q.type==="essay"?`<textarea data-q="${q.id}">${esc(st.a[q.id]||"")}</textarea>`:st.o[q.id].map(k=>`<label class=opt><input type=radio name="${q.id}" value="${k}" ${st.a[q.id]===k?"checked":""}> ${esc(q.options[k])}</label>`).join(""))+"</div>"}).join("")+`<button id=sub>تسليم الامتحان</button>`;
+ app.oninput=e=>{const q=e.target.name||e.target.dataset.q;if(!q)return;st.a[q]=e.target.type==="radio"?+e.target.value:e.target.value;save()};
+ $("#sub").onclick=()=>confirm("متأكد من التسليم؟")&&submit();
+ tm=setInterval(()=>{const left=ex.durationMin*60-Math.floor((Date.now()-st.t0)/1000);$("#t").textContent="⏱ "+fmt(Math.max(left,0));if(left<=0)submit()},1000)}
+async function submit(){clearInterval(tm);const code=rid(),dur=Math.min(Math.floor((Date.now()-st.t0)/1000),ex.durationMin*60);
+ app.innerHTML="جارٍ الإرسال…";
+ try{await fs.addDoc(fs.collection(db,"submissions"),{examId:st.id,examTitle:ex.title,name:st.n,cls:st.c,email:st.m,answers:st.a,startedAt:st.t0,durationSec:dur,code,released:false,submittedAt:fs.serverTimestamp()})}
+ catch(e){app.innerHTML="تعذر الإرسال، تأكد من الإنترنت وحاول مرة تانية.";return run()}
+ localStorage.removeItem(LS);
+ let h=`<h2>تم التسليم ✅</h2><div class=card>كود نتيجتك: <b>${code}</b><br>احتفظ به. هتشوف نتيجتك بيه من الصفحة الرئيسية بعد ما المعلم ينشرها.</div>`;
+ if(ex.answers){const r=grade(ex,ex,st.a);h+=`<div class=card>الدرجة الموضوعية: <b>${r.obj}</b> (المقالي يصححه المعلم)</div>`+review(r.d.filter(x=>x.type!=="essay"))}
+ app.innerHTML=h}
+async function result(code){const s=await fs.getDoc(fs.doc(db,"results",code));
+ app.innerHTML=s.exists()?(r=>`<h2>${esc(r.name)}</h2><div class=card>${esc(r.examTitle)}<br>الدرجة: <b>${r.score} / ${r.tot}</b> (${r.pct}%) — التقدير: <b>${r.g}</b><br>زمن الحل: ${fmt(r.durationSec)}</div>${review(r.d)}`)(s.data()):`<div class=card>لسه النتيجة مش منشورة أو الكود غلط.</div><a href="./">رجوع</a>`}
+home();
+</script></body></html>
