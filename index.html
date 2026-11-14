@@ -1,5 +1,10 @@
 <!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>الامتحانات</title><link rel=stylesheet href=style.css></head>
-<body><main id=app>جارٍ التحميل…</main>
+<body><script>
+window.__err=function(m){var d=document.createElement('pre');d.style.cssText='background:#fee;color:#900;padding:10px;direction:ltr;white-space:pre-wrap;margin:10px;font:13px monospace';d.textContent='ERROR: '+m;(document.body||document.documentElement).appendChild(d)};
+addEventListener('error',function(e){__err((e.message||'script load failed')+' '+(e.filename||''))},true);
+addEventListener('unhandledrejection',function(e){__err((e.reason&&(e.reason.code+' | '+e.reason.message))||e.reason)});
+</script>
+<main id=app>جارٍ التحميل…</main>
 <script type=module>
 import {db,fs,$,esc,fmt,grade,review,shuffle} from "./common.js";
 const app=$("#app"),P=new URLSearchParams(location.search),LS="exam_state";
