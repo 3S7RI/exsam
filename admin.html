@@ -14,7 +14,7 @@ function login(){app.innerHTML=`<h2>دخول المعلم</h2><div class=card><i
 async function home(){const q=await fs.getDocs(fs.collection(db,"exams"));
  app.innerHTML=`<h2>الامتحانات</h2><div class=card>رفع امتحان (ملف JSON): <input type=file id=f accept=.json><button class=g id=out>خروج</button></div>`+
  q.docs.map(d=>{const x=d.data();return `<div class=card><b>${esc(x.title)}</b> <small>${x.questions.length} سؤال — ${x.active?"مفتوح":"مغلق"}</small><br>
- <button data-a=tg data-id="${d.id}">${x.active?"إغلاق":"فتح"}</button> <button data-a=sub data-id="${d.id}">النتائج والتصحيح</button> <button class=r data-a=del data-id="${d.id}">حذف</button></div>`}).join("");
+ <button data-a=tg data-id="${d.id}">${x.active?"إغلاق":"فتح"}</button> <button data-a=sub data-id="${d.id}">النتائج والتصحيح</button> <button class=r data-a=del data-id="${d.id}">حذف</button>${links(d.id)}</div>`}).join("");
  $("#out").onclick=()=>au.signOut(auth);$("#f").onchange=upload;
  app.onclick=async e=>{const{a,id}=e.target.dataset;if(!a)return;
   if(a==="tg"){const s=await fs.getDoc(fs.doc(db,"exams",id));await fs.updateDoc(fs.doc(db,"exams",id),{active:!s.data().active});home()}
@@ -26,15 +26,29 @@ async function upload(e){try{const j=JSON.parse(await e.target.files[0].text()),
  const pub={title:j.title,subject:j.subject||"",durationMin:+j.durationMin||60,active:false,questions:qs,createdAt:Date.now()};
  if(j.instantResult){if(!confirm("النتيجة الفورية بتحط الإجابات الصح جوه الصفحة العامة. متأكد؟"))return;pub.answers=A;pub.model=M}
  await fs.setDoc(fs.doc(db,"exams",id),pub);await fs.setDoc(fs.doc(db,"examKeys",id),{answers:A,model:M});alert("تم الرفع (الامتحان مغلق، افتحه لما تجهز)");home()}catch(err){alert("الملف غير صالح: "+err.message)}}
+const base=location.href.replace(/admin\.html.*$/,"");
+const cp=(l,v)=>`<small>${l}</small><input readonly value="${v}" onclick="this.select()">`;
+const links=id=>`<div>${cp("🔗 رابط الطلاب (للواتساب):",base+id+".html")}${cp("رابط مباشر احتياطي:",base+"index.html?exam="+id)}${cp("📊 رابط الدرجات:",base+"grades.html?exam="+id)}</div>`;
 async function subsView(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();ex.id=id;keys=(await fs.getDoc(fs.doc(db,"examKeys",id))).data();
  subs=(await fs.getDocs(fs.query(fs.collection(db,"submissions"),fs.where("examId","==",id)))).docs.map(d=>({id:d.id,...d.data()}));
- const ess=ex.questions.filter(q=>q.type==="essay");
- app.innerHTML=`<h2>${esc(ex.title)} — ${subs.length} طالب</h2><button class=g id=bk>رجوع</button> <button id=all>نشر النتائج للكل</button><div style="overflow:auto"><table><tr><th>الطالب</th><th>موضوعي</th><th>الزمن</th>${ess.map((q,i)=>`<th>مقالي ${i+1} (${q.marks})</th>`).join("")}<th>المجموع</th><th>إرسال</th></tr>`+
- subs.map((s,i)=>{const r=grade(ex,keys,s.answers,s.essayMarks||{});return `<tr><td>${esc(s.name)}<br><small>${esc(s.cls)}</small></td><td>${r.obj}</td><td>${fmt(s.durationSec)}</td>${ess.map(q=>`<td><details><summary>إجابته</summary>${esc(s.answers[q.id]||"—")}<hr><small>${esc(keys.model[q.id])}</small></details><input type=number step=.5 max=${q.marks} value="${s.essayMarks?.[q.id]??""}" data-i=${i} data-q=${q.id}></td>`).join("")}<td>${r.score}/${r.tot} (${r.g})</td><td>${s.released?"✅ ":""}<button data-r=${i}>نشر</button> <a class=btn href="${mail(s,r)}">إيميل</a></td></tr>`}).join("")+"</table></div>";
- $("#bk").onclick=home;
- app.onchange=async e=>{const t=e.target;if(t.dataset.q){const s=subs[t.dataset.i];s.essayMarks={...(s.essayMarks||{}),[t.dataset.q]:+t.value};await fs.updateDoc(fs.doc(db,"submissions",s.id),{essayMarks:s.essayMarks});subsView(id)}};
- app.onclick=async e=>{if(e.target.dataset.r!==undefined){await release(subs[e.target.dataset.r]);subsView(id)}
-  if(e.target.id==="all"&&confirm("نشر نتايج الكل؟")){for(const s of subs)await release(s);subsView(id)}}}
+ const rs=subs.map(s=>grade(ex,keys,s.answers,s.essayMarks||{})),pend=rs.filter(r=>r.pend).length;
+ app.innerHTML=`<h2>${esc(ex.title)} — ${subs.length} طالب</h2><button class=g id=bk>رجوع</button> <button id=es>✍️ تصحيح المقالي</button> <button id=all>نشر النتائج للطلاب</button> <button id=bd>📊 نشر لوحة الدرجات</button>
+ <div class=card>${pend?`⚠️ ${pend} طالب مقاليه لسه ما اتصححش.`:"✅ كل المقالي اتصحح."}</div><div style="overflow:auto"><table><tr><th>الطالب</th><th>موضوعي</th><th>مقالي</th><th>المجموع</th><th>الزمن</th><th>خروج من الصفحة</th><th>الحالة</th><th></th></tr>`+
+ subs.map((s,i)=>{const r=rs[i];return `<tr><td>${esc(s.name)}<br><small>${esc(s.cls)}</small></td><td>${r.obj}</td><td>${r.pend?"—":r.ess}</td><td>${r.score}/${r.tot} (${r.g})</td><td>${fmt(s.durationSec)}</td><td>${s.switches||0}</td><td>${s.released?"✅ منشور":"—"}</td><td><a class=btn href="${mail(s,r)}">إيميل</a></td></tr>`}).join("")+"</table></div>";
+ app.onchange=null;app.onclick=null;$("#bk").onclick=home;$("#es").onclick=()=>essay(0);$("#bd").onclick=()=>board(rs);
+ $("#all").onclick=async()=>{if(pend&&!confirm("في مقالي لسه ما اتصححش وهيتحسب لهم «لم تُصحح». تكمل؟"))return;for(const s of subs)await release(s);subsView(id)}}
+function essay(qi){const eq=ex.questions.filter(q=>q.type==="essay"),q=eq[qi];if(!q)return alert("لا توجد أسئلة مقالية");
+ const done=subs.filter(s=>s.essayMarks?.[q.id]!=null).length,opts=[];for(let m=0;m<=q.marks;m+=.5)opts.push(m);
+ app.innerHTML=`<h2>تصحيح المقالي — سؤال ${qi+1} من ${eq.length}</h2><button class=g id=bk>رجوع للنتائج</button> <button id=pv ${qi?"":"disabled"}>السابق</button> <button id=nx ${qi<eq.length-1?"":"disabled"}>التالي</button>
+ <div class=card><b>${esc(q.text)}</b> <small>(${q.marks} درجة)</small>${q.passage?`<details><summary>النص</summary><div style="white-space:pre-wrap">${esc(q.passage)}</div></details>`:""}</div>
+ <div class=card style="border-color:#16a34a"><b>✅ الإجابة النموذجية وتوزيع الدرجات</b><div style="white-space:pre-wrap">${esc(keys.model[q.id])}</div></div><p>تم تصحيح ${done} من ${subs.length}</p>`+
+ subs.map((s,i)=>{const v=s.essayMarks?.[q.id];return `<div class=card><b>${esc(s.name)}</b> <small>${esc(s.cls)}</small><div style="white-space:pre-wrap;margin:8px 0">${esc(s.answers[q.id]||"— لم يجب —")}</div>${opts.map(m=>`<button class="${v===m?"":"g"}" data-i=${i} data-m=${m}>${m}</button>`).join(" ")}</div>`}).join("");
+ $("#bk").onclick=()=>subsView(ex.id);$("#pv").onclick=()=>essay(qi-1);$("#nx").onclick=()=>essay(qi+1);
+ app.onclick=async e=>{const t=e.target;if(t.dataset.m===undefined)return;const s=subs[t.dataset.i];s.essayMarks={...(s.essayMarks||{}),[q.id]:+t.dataset.m};
+  await fs.updateDoc(fs.doc(db,"submissions",s.id),{essayMarks:s.essayMarks});const y=scrollY;essay(qi);scrollTo(0,y)}}
+async function board(rs){const rows=subs.map((s,i)=>({s,r:rs[i]})).filter(x=>!x.r.pend).sort((a,b)=>b.r.score-a.r.score||a.s.durationSec-b.s.durationSec).map(({s,r})=>({name:s.name,cls:s.cls||"",score:r.score,tot:r.tot,pct:r.pct,g:r.g,t:s.durationSec}));
+ if(!confirm(`هتنشر ${rows.length} اسم ودرجة علنًا لأي حد معاه رابط الدرجات (اللي مقاليه لسه ما اتصححش مش هيظهر). متأكد؟`))return;
+ await fs.setDoc(fs.doc(db,"boards",ex.id),{title:ex.title,rows,at:Date.now()});alert("تم نشر لوحة الدرجات ✅")}
 async function release(s){const r=grade(ex,keys,s.answers,s.essayMarks||{});
  await fs.setDoc(fs.doc(db,"results",s.code),{name:s.name,examTitle:ex.title,score:r.score,tot:r.tot,pct:r.pct,g:r.g,durationSec:s.durationSec,d:r.d});await fs.updateDoc(fs.doc(db,"submissions",s.id),{released:true})}
 const mail=(s,r)=>{const u=location.origin+location.pathname.replace("admin.html","")+"?code="+s.code;return `mailto:${s.email}?subject=${encodeURIComponent("نتيجة "+ex.title)}&body=${encodeURIComponent(`${s.name}\nالدرجة: ${r.score}/${r.tot} (${r.g})\nزمن الحل: ${fmt(s.durationSec)}\nالأخطاء والإجابات الصحيحة: ${u}`)}`};

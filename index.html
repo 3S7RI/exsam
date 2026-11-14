@@ -45,11 +45,13 @@ async function home(){
  if(P.get("code"))return result(P.get("code"));
  const old=JSON.parse(localStorage.getItem(LS)||"null");
  if(old){const s=await fs.getDoc(fs.doc(db,"exams",old.id));if(s.exists()){ex=s.data();st=old;return run()}}
+ if(P.get("exam"))return openExam(P.get("exam"));
  const q=await fs.getDocs(fs.query(fs.collection(db,"exams"),fs.where("active","==",true)));
  app.innerHTML=`<div class=hero><h1>بوابة الامتحانات</h1><p>اختر امتحانك وابدأ رحلتك 🚀</p></div>`+(q.empty?"<div class=card>لا توجد امتحانات متاحة الآن.</div>":"")+
  q.docs.map(d=>{const x=d.data();return `<div class="card ex"><div><b>${esc(x.title)}</b><br><span class=tag>${esc(x.subject||"")}</span><span class=tag>${x.durationMin} دقيقة</span><span class=tag>${x.questions.length} سؤال</span></div><button class=btn data-id="${d.id}">ابدأ</button></div>`}).join("")+
- `<div class=card><b>🔎 شوف نتيجتك</b><input id=cd placeholder="اكتب كود النتيجة"><button class=btn id=go>عرض</button></div>`;
+ `<div class=card><b>🔎 شوف نتيجتك</b><input id=cd placeholder="اكتب كود النتيجة" value="${localStorage.last_code||''}"><button class=btn id=go>عرض</button></div>`;
  app.onclick=e=>{if(e.target.dataset.id)form(e.target.dataset.id);if(e.target.id==="go")result($("#cd").value.trim())}}
+async function openExam(id){try{await form(id)}catch(e){app.innerHTML=`<div class=card>⛔ الامتحان ده مش متاح دلوقتي (مقفول أو لسه ما بدأش). اسأل المعلم.</div><a href="./">كل الامتحانات</a>`}}
 async function form(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();
  app.innerHTML=`<div class=hero><h1>${esc(ex.title)}</h1><p>${ex.durationMin} دقيقة — الدرجة ${ex.questions.reduce((a,q)=>a+q.marks,0)}<br>الوقت يبدأ لما تضغط «ابدأ الامتحان»</p></div><div class=card><input id=n placeholder="الاسم بالكامل"><input id=c placeholder="الفصل"><input id=m type=email placeholder="الإيميل (لاستلام النتيجة)"><button class="btn big" id=s>ابدأ الامتحان ✨</button></div>`;
  $("#s").onclick=()=>{const n=$("#n").value.trim(),m=$("#m").value.trim();if(!n||!m)return alert("اكتب الاسم والإيميل");
@@ -70,7 +72,7 @@ async function submit(){clearInterval(tm);tm=0;const code=rid(),dur=Math.min(Mat
  app.innerHTML="<div class=card>جارٍ الإرسال…</div>";
  try{await fs.addDoc(fs.collection(db,"submissions"),{examId:st.id,examTitle:ex.title,name:st.n,cls:st.c,email:st.m,answers:st.a,startedAt:st.t0,durationSec:dur,switches:st.sw||0,code,released:false,submittedAt:fs.serverTimestamp()})}
  catch(e){alert("تعذر الإرسال، تأكد من الإنترنت.");return run()}
- localStorage.removeItem(LS);confetti();
+ localStorage.removeItem(LS);localStorage.last_code=code;confetti();
  let h=`<div class=hero><h1>تم التسليم 🎉</h1></div><div class=card style="text-align:center">كود نتيجتك<br><b style="font-size:2rem;color:var(--o);letter-spacing:3px">${code}</b><br><small>صوّر الكود أو احتفظ به. هتشوف نتيجتك بيه من الصفحة الرئيسية بعد ما المعلم ينشرها.</small></div>`;
  if(ex.answers){const r=grade(ex,ex,st.a);h+=`<div class=card>الدرجة الموضوعية: <b>${r.obj}</b> (المقالي يصححه المعلم)</div>`+review(r.d.filter(x=>x.type!=="essay"))}
  app.innerHTML=h}
