@@ -15,5 +15,5 @@ async function go(){
  const draw=q=>$("#tb").innerHTML="<tr><th>#</th><th>الاسم</th><th>الفصل</th><th>الدرجة</th><th>التقدير</th><th>الزمن</th></tr>"+r.map((x,i)=>[x,i]).filter(([x])=>x.name.includes(q)).map(([x,i])=>`<tr><td>${["🥇","🥈","🥉"][i]||i+1}</td><td>${esc(x.name)}</td><td>${esc(x.cls)}</td><td><b>${x.score}</b>/${x.tot}</td><td>${x.g}</td><td>${fmt(x.t)}</td></tr>`).join("");
  draw("");$("#sr").oninput=e=>draw(e.target.value.trim());wire()}
 function wire(){const g=$("#go");g.onclick=e=>{e.preventDefault();location.href="index.html?code="+encodeURIComponent($("#cd").value.trim())}}
-go();
+go().catch(e=>{app.innerHTML=`<div class=card>⚠️ ${e.code==="permission-denied"?"صلاحيات قاعدة البيانات لسه ما اتحدثتش. المعلم لازم ينشر ملف firestore.rules الجديد.":esc(e.message)}</div>`+code;wire()});
 </script></body></html>
