@@ -2,10 +2,10 @@
 <style>table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--b);text-align:right}.me td{background:#e8793a22}.st{display:flex;gap:10px;flex-wrap:wrap}.st div{flex:1;min-width:110px;text-align:center}.st b{font-size:1.5rem;color:var(--o)}</style></head><body>
 <div class=top><div class=logo><img src=logo.jpg alt="رحلة دراسية"></div></div><main id=app>جارٍ التحميل…</main>
 <script type=module>
-import {db,fs,$,esc,fmt} from "./common.js";
+import {db,fs,$,esc,fmt,hash} from "./common.js";
 const app=$("#app"),id=new URLSearchParams(location.search).get("exam"),R=document.documentElement;
 R.dataset.theme=localStorage.th||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
-const code=`<div class=card><b>🔎 عايز تفاصيل إجاباتك وأخطاءك؟</b><br>اكتب كود نتيجتك:<input id=cd value="${localStorage.last_code||""}" placeholder="الكود"><a class=btn id=go href="#">عرض نتيجتي</a></div>`;
+const code=`<div class=card><b>🔎 عايز تفاصيل إجاباتك وأخطاءك؟</b><br>اكتب كود نتيجتك:<input id=cd value="${localStorage.last_code||""}" placeholder="الكود"><a class=btn id=go href="#">عرض نتيجتي</a></div>`+(id?`<div class=card><b>📩 نسيت كود نتيجتك؟</b><br>اكتب الإيميل اللي امتحنت بيه:<input id=em type=email placeholder="الإيميل"><button class=btn id=rc>استرجاع الكود</button><div id=rs style="margin-top:10px"></div></div>`:"");
 async function go(){
  if(!id){const q=await fs.getDocs(fs.collection(db,"boards"));app.innerHTML=`<div class=hero><h1>صفحة الدرجات 📊</h1></div>`+(q.empty?"<div class=card>لسه مفيش درجات منشورة.</div>":q.docs.map(d=>`<div class="card ex"><b>${esc(d.data().title)}</b><a class=btn href="?exam=${d.id}">عرض</a></div>`).join(""))+code;return wire()}
  const s=await fs.getDoc(fs.doc(db,"boards",id));if(!s.exists()){app.innerHTML=`<div class=card>الدرجات لسه ما اتنشرتش. ارجع بعد ما المعلم ينشرها.</div>`+code;return wire()}
@@ -14,6 +14,6 @@ async function go(){
  <div class=card><input id=sr placeholder="🔍 ابحث باسمك"><div style="overflow:auto"><table id=tb></table></div></div>`+code;
  const draw=q=>$("#tb").innerHTML="<tr><th>#</th><th>الاسم</th><th>الفصل</th><th>الدرجة</th><th>التقدير</th><th>الزمن</th></tr>"+r.map((x,i)=>[x,i]).filter(([x])=>x.name.includes(q)).map(([x,i])=>`<tr><td>${["🥇","🥈","🥉"][i]||i+1}</td><td>${esc(x.name)}</td><td>${esc(x.cls)}</td><td><b>${x.score}</b>/${x.tot}</td><td>${x.g}</td><td>${fmt(x.t)}</td></tr>`).join("");
  draw("");$("#sr").oninput=e=>draw(e.target.value.trim());wire()}
-function wire(){const g=$("#go");g.onclick=e=>{e.preventDefault();location.href="index.html?code="+encodeURIComponent($("#cd").value.trim())}}
+function wire(){const rc=$("#rc");if(rc)rc.onclick=async()=>{const e=$("#em").value.trim().toLowerCase();if(!e)return;const s=await fs.getDoc(fs.doc(db,"lookup",await hash(id+"|"+e)));$("#rs").innerHTML=s.exists()?`كودك: <b style="color:var(--o);font-size:1.4rem">${esc(s.data().code)}</b> <a class=btn href="index.html?code=${s.data().code}">عرض نتيجتي</a>`:"مفيش نتيجة منشورة بالإيميل ده. اتأكد من كتابته زي ما سجّلته، أو المعلم لسه ما نشرش النتائج."};const g=$("#go");g.onclick=e=>{e.preventDefault();location.href="index.html?code="+encodeURIComponent($("#cd").value.trim())}}
 go().catch(e=>{app.innerHTML=`<div class=card>⚠️ ${e.code==="permission-denied"?"صلاحيات قاعدة البيانات لسه ما اتحدثتش. المعلم لازم ينشر ملف firestore.rules الجديد.":esc(e.message)}</div>`+code;wire()});
 </script></body></html>

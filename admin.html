@@ -6,7 +6,7 @@ addEventListener('unhandledrejection',function(e){__err((e.reason&&(e.reason.cod
 </script>
 <main id=app>جارٍ التحميل…</main>
 <script type=module>
-import {db,auth,fs,au,$,esc,fmt,grade} from "./common.js";
+import {db,auth,fs,au,$,esc,fmt,grade,hash} from "./common.js";
 const app=$("#app");let ex,keys,subs=[];
 au.onAuthStateChanged(auth,u=>u?home():login());
 function login(){app.innerHTML=`<h2>دخول المعلم</h2><div class=card><input id=e type=email placeholder="الإيميل"><input id=p type=password placeholder="كلمة السر"><button id=b>دخول</button></div>`;
@@ -32,14 +32,14 @@ const links=id=>`<div>${cp("🔗 رابط الطلاب (للواتساب):",base
 async function subsView(id){ex=(await fs.getDoc(fs.doc(db,"exams",id))).data();ex.id=id;keys=(await fs.getDoc(fs.doc(db,"examKeys",id))).data();
  subs=(await fs.getDocs(fs.query(fs.collection(db,"submissions"),fs.where("examId","==",id)))).docs.map(d=>({id:d.id,...d.data()}));
  const rs=subs.map(s=>grade(ex,keys,s.answers,s.essayMarks||{})),pend=rs.filter(r=>r.pend).length;
- app.innerHTML=`<h2>${esc(ex.title)} — ${subs.length} طالب</h2><button class=g id=bk>رجوع</button> <button id=es>✍️ تصحيح المقالي</button> <button id=all>نشر النتائج للطلاب</button> <button id=em>📧 إرسال النتائج للكل بالإيميل</button> <button id=bd>📊 نشر لوحة الدرجات</button>
+ app.innerHTML=`<h2>${esc(ex.title)} — ${subs.length} طالب</h2><button class=g id=bk>رجوع</button> <button id=es>✍️ تصحيح المقالي</button> <button id=all>نشر النتائج للطلاب</button> <button id=em>📧 إرسال النتائج للكل بالإيميل</button> <button id=bd>📊 نشر لوحة الدرجات</button> <button class=r id=ub>🗑️ إلغاء نشر لوحة الدرجات</button>
  <div class=card>${pend?`⚠️ ${pend} طالب مقاليه لسه ما اتصححش.`:"✅ كل المقالي اتصحح."}</div><div style="overflow:auto"><table><tr><th>الطالب</th><th>موضوعي</th><th>مقالي</th><th>المجموع</th><th>الزمن</th><th>خروج</th><th>تحديث</th><th>الحالة</th><th></th></tr>`+
  subs.map((s,i)=>{const r=rs[i];return `<tr><td>${esc(s.name)}<br><small>${esc(s.cls)}</small></td><td>${r.obj}</td><td>${r.pend?"—":r.ess}</td><td>${r.score}/${r.tot} (${r.g})</td><td>${fmt(s.durationSec)}</td><td>${s.switches||0}</td><td>${s.refreshes||0}</td><td>${s.released?"✅ منشور":"—"}${s.emailed?" 📧 اتبعت":""}</td><td><button data-send=${i}>📧 إرسال</button> <a class=g style="padding:9px 12px;border-radius:8px;color:#fff;text-decoration:none" href="${mail(s,r)}">برنامج البريد</a></td></tr>`}).join("")+"</table></div>";
- app.onchange=null;app.onclick=async e=>{const i=e.target.dataset.send;if(i===undefined)return;e.target.disabled=true;e.target.textContent="…";if(await send(subs[i],rs[i]))subsView(ex.id);else{e.target.disabled=false;e.target.textContent="📧 إرسال"}};$("#bk").onclick=home;$("#es").onclick=()=>essay(0);$("#bd").onclick=()=>board(rs);
+ app.onchange=null;app.onclick=async e=>{const i=e.target.dataset.send;if(i===undefined)return;e.target.disabled=true;e.target.textContent="…";if(await send(subs[i],rs[i]))subsView(ex.id);else{e.target.disabled=false;e.target.textContent="📧 إرسال"}};$("#bk").onclick=home;$("#es").onclick=()=>essay(0);$("#bd").onclick=()=>board(rs);$("#ub").onclick=async()=>{if(!confirm("هتشيل لوحة الدرجات من الموقع؟"))return;await fs.deleteDoc(fs.doc(db,"boards",ex.id));alert("تم إلغاء نشر لوحة الدرجات ✅")};
  $("#em").onclick=async()=>{if(!ejOk())return;if(!confirm(`هتبعت إيميل لـ ${subs.length} طالب (الخطة المجانية 200 إيميل في الشهر). تكمل؟`))return;let n=0;
   for(let i=0;i<subs.length;i++){$("#em").textContent=`جارٍ الإرسال ${i+1}/${subs.length}`;if(!(await send(subs[i],rs[i])))break;n++;await new Promise(z=>setTimeout(z,1000))}
   alert(`تم إرسال ${n} من ${subs.length}`);subsView(ex.id)};
- $("#all").onclick=async()=>{if(pend&&!confirm("في مقالي لسه ما اتصححش وهيتحسب لهم «لم تُصحح». تكمل؟"))return;for(const s of subs)await release(s);subsView(id)}}
+ $("#all").onclick=async()=>{if(pend&&!confirm("في مقالي لسه ما اتصححش وهيتحسب لهم «لم تُصحح». تكمل؟"))return;$("#all").textContent="جارٍ النشر…";for(const s of subs)await release(s);alert(`تم نشر نتائج ${subs.length} طالب ✅ (بيقدروا يشوفوها بكودهم)`);subsView(id)}}
 function essay(qi){const eq=ex.questions.filter(q=>q.type==="essay"),q=eq[qi];if(!q)return alert("لا توجد أسئلة مقالية");
  const done=subs.filter(s=>s.essayMarks?.[q.id]!=null).length,opts=[];for(let m=0;m<=q.marks;m+=.5)opts.push(m);
  app.innerHTML=`<h2>تصحيح المقالي — سؤال ${qi+1} من ${eq.length}</h2><button class=g id=bk>رجوع للنتائج</button> <button id=pv ${qi?"":"disabled"}>السابق</button> <button id=nx ${qi<eq.length-1?"":"disabled"}>التالي</button>
@@ -60,6 +60,6 @@ async function send(s,r){if(!ejOk())return false;await release(s);
   if(!res.ok){alert("فشل الإرسال: "+await res.text());return false}
   await fs.updateDoc(fs.doc(db,"submissions",s.id),{emailed:true});return true}catch(e){alert("فشل الإرسال: "+e.message);return false}}
 async function release(s){const r=grade(ex,keys,s.answers,s.essayMarks||{});
- await fs.setDoc(fs.doc(db,"results",s.code),{name:s.name,examTitle:ex.title,score:r.score,tot:r.tot,pct:r.pct,g:r.g,durationSec:s.durationSec,d:r.d});await fs.updateDoc(fs.doc(db,"submissions",s.id),{released:true})}
+ await fs.setDoc(fs.doc(db,"results",s.code),{name:s.name,examTitle:ex.title,score:r.score,tot:r.tot,pct:r.pct,g:r.g,durationSec:s.durationSec,d:r.d});await fs.updateDoc(fs.doc(db,"submissions",s.id),{released:true});await fs.setDoc(fs.doc(db,"lookup",await hash(ex.id+"|"+s.email.trim().toLowerCase())),{code:s.code})}
 const mail=(s,r)=>{const u=location.origin+location.pathname.replace("admin.html","")+"?code="+s.code;return `mailto:${s.email}?subject=${encodeURIComponent("نتيجة "+ex.title)}&body=${encodeURIComponent(`${s.name}\nالدرجة: ${r.score}/${r.tot} (${r.g})\nزمن الحل: ${fmt(s.durationSec)}\nالأخطاء والإجابات الصحيحة: ${u}`)}`};
 </script></body></html>

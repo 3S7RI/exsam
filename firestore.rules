@@ -6,6 +6,7 @@ service cloud.firestore {
     match /examKeys/{id}   { allow read, write: if admin(); }
     match /submissions/{id}{ allow create: if request.resource.data.keys().hasAll(['examId','name','email','answers','code']); allow read, update, delete: if admin(); }
     match /boards/{id}  { allow read: if true; allow write: if admin(); }
+    match /lookup/{h}     { allow get: if true; allow list: if false; allow write: if admin(); }
     match /results/{code}  { allow get: if true; allow list, write: if admin(); }
   }
 }

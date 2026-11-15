@@ -18,3 +18,5 @@ export function grade(ex,k,a,em={}){let obj=0,ess=0,tot=0,pend=false;
  const score=obj+ess,pct=tot?Math.round(score/tot*1000)/10:0;return {d,obj,ess,tot,pend,score,pct,g:gradeOf(pct)}}
 export const review=d=>d.map((x,i)=>`<div class=card><b>${i+1}.</b> ${esc(x.t)}<br>إجابتك: <span class="${x.type==="essay"?"":x.got?"ok":"no"}">${esc(x.s)}</span><br>`+
  (x.type==="essay"?`النموذجية: ${esc(x.c)}<br>`:x.got?"":`الصحيحة: <span class=ok>${esc(x.c)}</span><br>`)+`<small>الدرجة: ${x.got??"لم تُصحح"} / ${x.marks}</small></div>`).join("");
+
+export async function hash(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
